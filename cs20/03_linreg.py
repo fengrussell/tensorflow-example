@@ -34,7 +34,7 @@ Y = tf.placeholder(tf.float32, name='Y')
 W = tf.Variable(0.0, name='weights')
 b = tf.Variable(0.0, name='bias')
 
-# step 4. construct model
+# step 4. construct mnist
 Y_pred = X * W + b
 
 # step 5. use the square error as the loss function
@@ -46,7 +46,7 @@ optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001).minimize(loss
 with tf.Session() as sess:
     # step 7. initialize variables
     sess.run(tf.global_variables_initializer())
-    # step 8. train the model
+    # step 8. train the mnist
     for i in range(100):
         for x, y in data:
             sess.run(optimizer, feed_dict={X: x, Y: y})

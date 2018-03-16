@@ -29,7 +29,7 @@ n_samples = train_X.shape[0]
 X = tf.placeholder(tf.float32)
 Y = tf.placeholder(tf.float32)
 
-# Set model weights
+# Set mnist weights
 W = tf.Variable(rng.randn(), name="weight")
 b = tf.Variable(rng.randn(), name="bias")
 
