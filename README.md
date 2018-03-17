@@ -1,6 +1,7 @@
 tensorflow代码示例
 
-* 目录结构
+#### 1. 目录结构  
+```
 ./
 ├── 0bak            备份
 ├── 3rd             第三方的例子
@@ -9,4 +10,5 @@ tensorflow代码示例
 ├── linreg          线性回归
 ├── mnist           mnist多种实现，单机、单机多卡、分布式
 └── tutorial        tf一些方法使用的测试示例
+```
 
