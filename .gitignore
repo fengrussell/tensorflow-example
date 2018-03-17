@@ -2,3 +2,4 @@ out
 .idea
 cs20/graphs/
 mnist/data/
+mnist/log/
