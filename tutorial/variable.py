@@ -89,6 +89,22 @@ def test2():
     '''
 
 
+def test3():
+    # with tf.name_scope('nsc1') as nsc1:
+    #     print tf.get_variable_scope().original_name_scope
+    #     with tf.variable_scope(tf.get_variable_scope()) as vsc1:
+    #         print vsc1
+    #         print vsc1.name
+
+    with tf.name_scope('nsc1'):
+        with tf.name_scope('nsc2') as nsc2:
+            print nsc2
+
+    with tf.variable_scope('vsc1'):
+        with tf.variable_scope('vsc2') as vsc2:
+            print vsc2
+
+
 def example1():
     # 拿官方的例子改动一下
     def my_image_filter():
@@ -152,5 +168,6 @@ if __name__ == "__main__":
     # test1()
     # test2()
     # example1()
-    print
-    example2()
+    # print
+    # example2()
+    test3()
