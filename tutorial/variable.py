@@ -98,11 +98,55 @@ def test3():
 
     with tf.name_scope('nsc1'):
         with tf.name_scope('nsc2') as nsc2:
-            print nsc2
+            print nsc2  # 输出：nsc1/nsc2/，说明name_scope会嵌套
 
+    print
     with tf.variable_scope('vsc1'):
         with tf.variable_scope('vsc2') as vsc2:
             print vsc2
+            print vsc2.name  # vsc1/vsc2，说明variable_scope会嵌套
+            print vsc2.original_name_scope
+            print tf.get_variable_scope().original_name_scope
+
+    print
+    with tf.variable_scope("hello") as variable_scope:
+        arr1 = tf.get_variable("arr1", shape=[2, 10], dtype=tf.float32)
+
+        print variable_scope
+        print variable_scope.name  # 打印出变量空间名字
+        print arr1.name  # 输出hello/arr1:0
+        print tf.get_variable_scope().original_name_scope
+        # tf.get_variable_scope() 获取的就是variable_scope
+
+        with tf.variable_scope("xixi") as v_scope2:
+            print tf.get_variable_scope().original_name_scope  # 输出：hello/xixi/
+            # tf.get_variable_scope() 获取的就是v _scope2
+            arr2 = tf.get_variable("arr2", shape=[1])
+            print arr2.name  # 输出：hello/xixi/arr2:0
+
+        with tf.variable_scope(tf.get_variable_scope()) as v_scope3:
+            print v_scope3.name                     # hello
+            print v_scope3.original_name_scope      # hello/
+            arr3 = tf.get_variable("arr3", shape=[1])
+            print arr3.name                         # hello/arr3:0
+            '''
+            看到很多代码用tf.variable_scope(f.get_variable_scope())，这种方式是说上一层定义了tf.variable_scope, 用上一层的scope, 
+            保证还是在同一个scope下, 没有再嵌套.
+            '''
+
+        with tf.variable_scope("hello") as v_scope4:
+            print v_scope4.name                     # hello/hello
+            print v_scope4.original_name_scope      # hello/hello_1/
+            '''
+            用字符串定义之前同名的scope，显然还是要嵌套的
+            '''
+
+    with tf.name_scope("name1"):
+        with tf.variable_scope("var1"):
+            w = tf.get_variable("w", shape=[2])
+            res = tf.add(w, [3])
+            print w.name        # var1/w:0
+            print res.name      # name1/var1/Add:0, name_scope、variable_scope对op都生效
 
 
 def example1():
@@ -163,6 +207,7 @@ def example2():
     在main函数中执行example1和example2，第二次会打印12条记录。单独执行example2，只有4条记录。正如上面所述，如果执行了example1，其实这些
     变量已经添加到graph中了，所以example2会输出12条记录（example1有8条记录）
     '''
+
 
 if __name__ == "__main__":
     # test1()
