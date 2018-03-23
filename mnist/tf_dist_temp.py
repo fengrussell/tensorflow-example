@@ -21,7 +21,8 @@ MODEL_SAVE_PATH = "./log/sync"
 DATA_PATH = "./data/output.tfrecords"
 
 # gpu数量，先定义为常量
-N_GPU = 2
+#N_GPU = 2
+N_GPU = 1
 
 
 # 运行程序传入的参数
@@ -190,7 +191,7 @@ def build_task_graph(num_workers, is_chief):
 
     with tf.variable_scope(tf.get_variable_scope()):
         for i in range(N_GPU):
-            with tf.device('/gpu:%d' % i):
+            with tf.device('/cpu:%d' % i):
                 with tf.name_scope('GPU_%d' % i) as scope:
                     loss = get_loss(x, y, regularizer, scope, reuse_variable)
                     reuse_variable = True
