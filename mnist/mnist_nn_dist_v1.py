@@ -26,7 +26,7 @@ server = tf.train.Server(cluster, job_name=FLAGS.job_name, task_index=FLAGS.task
 
 # config
 batch_size = 128
-learning_rate = 0.0005
+learning_rate = 0.001
 training_epochs = 20
 logs_path = './log/mnist'
 
@@ -35,6 +35,7 @@ if FLAGS.job_name == 'ps':
     server.join()
 elif FLAGS.job_name == 'worker':
 
+    # replica_device_setter没有显式的指定ps_device, 应该是可以从cluster获取, 待从源码确认。 2018-03-30
     with tf.device(tf.train.replica_device_setter(
             worker_device='/job:worker/task:%d' % FLAGS.task_index,
             cluster=cluster)):

@@ -10,7 +10,7 @@ mnist = input_data.read_data_sets("./data/mnist_data/", one_hot=True)
 IMAGE_PIXELS = 28
 batch_size = 128
 learning_rate = 0.001
-train_step = 1000
+train_step = 100
 
 X = tf.placeholder(tf.float32, [None, IMAGE_PIXELS * IMAGE_PIXELS], name='X')
 Y = tf.placeholder(tf.float32, [None, 10], name='Y')
@@ -28,9 +28,12 @@ init = tf.global_variables_initializer()
 correct_prediction = tf.equal(tf.argmax(Y_pred, 1), tf.argmax(Y, 1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 
+print('num_examples: ' + str(mnist.train.num_examples))
+
 with tf.Session() as sess:
     sess.run(init)
     for i in range(train_step):
+        # next_batch每一次读取batch_size长度的数据，如果超过num_examples, 会补齐batch_size, 然后循环读取
         batch_x, batch_y = mnist.train.next_batch(batch_size)
         sess.run(opt, feed_dict={X: batch_x, Y: batch_y})
     w_value, b_value = sess.run([W, b])
