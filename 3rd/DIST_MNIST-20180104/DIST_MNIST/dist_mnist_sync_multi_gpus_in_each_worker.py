@@ -11,8 +11,8 @@ import numpy as np
 
 flags = tf.app.flags
 flags.DEFINE_string("data_dir", "./", "Directory for storing mnist data")
-flags.DEFINE_string("train_tfrecords", None, "Path for the train tfrecords file")
-flags.DEFINE_string("test_tfrecords", None, "Path for the test tfrecords file")
+flags.DEFINE_string("train_tfrecords", "./train.tfrecords", "Path for the train tfrecords file")
+flags.DEFINE_string("test_tfrecords", "./test.tfrecords", "Path for the test tfrecords file")
 flags.DEFINE_string("model_dir", "./", "Directory for storing mnist data")
 flags.DEFINE_integer("task_index", None,
                      "Worker task index, should be >= 0. task_index=0 is "
@@ -33,7 +33,7 @@ flags.DEFINE_string("worker_hosts", "localhost:2223,localhost:2224",
 flags.DEFINE_string("job_name", None, "job name: worker or ps")
 
 FLAGS = flags.FLAGS
-assert tf.__version__ == '1.1.0', ('This code requires TensorFlow v1.1, You have:%s' % tf.__version__)
+assert tf.__version__ == '1.6.0', ('This code requires TensorFlow v1.1, You have:%s' % tf.__version__)
 
 IMAGE_PIXELS = 28
 
@@ -147,7 +147,7 @@ def main(_):
         loss_list = []
         with tf.variable_scope(tf.get_variable_scope()):
             for i in range(FLAGS.num_gpus):
-                with tf.device('/gpu:%d' % i):
+                with tf.device('/cpu:%d' % i):
                     with tf.name_scope('GPU_%d' % i) as scope:
                         train_image_filename_queue = tf.train.string_input_producer(tf.train.match_filenames_once(FLAGS.train_tfrecords), shuffle=False)
                         train_images, train_labels = read_image_batch(train_image_filename_queue, 12 * FLAGS.num_gpus)
