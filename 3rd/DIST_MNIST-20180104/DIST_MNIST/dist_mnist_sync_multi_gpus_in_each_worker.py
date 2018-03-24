@@ -215,8 +215,8 @@ def main(_):
             time.sleep(1)
             print('=======================================')
             # loss_1, loss_2, _, step, labels_1, labels_2 = sess.run(loss_list + [train_step, global_step] + train_labels_list)
-            loss, _, step, labels_1, labels_2 = sess.run(loss_list + [train_step, global_step] + train_labels_list)
-            print('global_step:%s, cost_time:%s, loss:%s, ====data:%s-%s' % (step, time.time() - b_time, loss, labels_1, labels_2))
+            loss, _, step, labels = sess.run(loss_list + [train_step, global_step] + train_labels_list)
+            print('global_step:%s, cost_time:%s, loss:%s, ====data:%s' % (step, time.time() - b_time, loss, labels))
             if step >= FLAGS.total_step:
                 break
 
