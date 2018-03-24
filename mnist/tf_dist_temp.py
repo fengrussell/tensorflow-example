@@ -278,7 +278,7 @@ def main(argv=None):
 
 def loss_value_str(loss_value):
     l = ''
-    return l.join(loss_value)
+    return l.join(map(lambda x: '%f ' % x, loss_value))
 
 
 if __name__ == "__main__":
