@@ -271,9 +271,14 @@ def main(argv=None):
                     duration = time.time() - start_time
                     sec_per_batch = duration / global_step_value
                     format_str = "After %d training steps (%d global steps), " +\
-                                 "avg_loss on training batch is %g. (%.3f sec/batch)"
-                    print format_str % (step, global_step_value, sum(loss_value)/len(loss_value), sec_per_batch)
+                                 "avg_loss on training batch is [%s]. (%.3f sec/batch)"
+                    print format_str % (step, global_step_value, loss_value_str(loss_value), sec_per_batch)
                 step += 1
+
+
+def loss_value_str(loss_value):
+    l = ''
+    return l.join(loss_value)
 
 
 if __name__ == "__main__":
