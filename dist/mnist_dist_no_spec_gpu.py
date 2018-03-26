@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+# 执行命令：
+# python mnist_dist_no_spec_gpu.py --ps_hosts=1.1.1.1:2222 --worker_hosts=1.1.1.1:2222,1.1.1.2:2222 --job_name=ps/worker --task_id=0
 
 import time
 import tensorflow as tf
@@ -35,7 +37,8 @@ tf.app.flags.DEFINE_integer('task_id', 0, 'Task ID of the worker/replica running
 def build_model(x, y_, n_workers, is_chief):
     regularizer = tf.contrib.layers.l2_regularizer(REGULARAZTION_RATE)
     y = mnist_inference.inference(x, regularizer)
-    global_step = tf.train.get_or_create_global_step()
+    # global_step = tf.train.get_or_create_global_step()
+    global_step = tf.get_variable('global_step', [], initializer=tf.constant_initializer(0), trainable=False)
 
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=y, labels=tf.argmax(y_, 1))
     cross_entropy_mean = tf.reduce_mean(cross_entropy)
