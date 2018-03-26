@@ -102,8 +102,8 @@ def main(argv=None):
     mnist_data = input_data.read_data_sets(DATA_PATH, one_hot=True)
 
     # 向ps注册graph
-    with tf.device(tf.train.replica_device_setter(worker_device="/job:worker/task:%d") % FLAGS.task_id,
-                   cluster=cluster):
+    with tf.device(tf.train.replica_device_setter(worker_device="/job:worker/task:%d" % FLAGS.task_id,
+                   cluster=cluster)):
         x = tf.placeholder(tf.float32, [None, mnist_inference.INPUT_NODE], name='input_x')
         y = tf.placeholder(tf.float32, [None, mnist_inference.INPUT_NODE], name='input_y')
 
