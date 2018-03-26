@@ -104,8 +104,8 @@ def main(argv=None):
     # 向ps注册graph
     with tf.device(tf.train.replica_device_setter(worker_device="/job:worker/task:%d" % FLAGS.task_id,
                    cluster=cluster)):
-        x = tf.placeholder(tf.float32, [None, mnist_inference.INPUT_NODE], name='input_x')
-        y = tf.placeholder(tf.float32, [None, mnist_inference.INPUT_NODE], name='input_y')
+        x = tf.placeholder(tf.float32, [None, INPUT_NODE], name='input_x')
+        y = tf.placeholder(tf.float32, [None, INPUT_NODE], name='input_y')
 
         regularizer = tf.contrib.layers.l2_regularizer(REGULARAZTION_RATE)
         global_step = tf.train.get_or_create_global_step()
@@ -123,14 +123,15 @@ def main(argv=None):
 
                         # 计算交叉熵
                         cross_entropy = tf.reduce_mean(
-                            tf.nn.sparse_softmax_cross_entropy_with_logits(logits=y_pred, labels=y))
+                            tf.nn.sparse_softmax_cross_entropy_with_logits(logits=y_pred, labels=tf.argmax(y, 1)))
                         regulaization_loss = tf.add_n(tf.get_collection('losses', scope))
                         loss = cross_entropy + regulaization_loss
 
-                        # 下一个gpu可以复用这些变量
-                        tf.get_variable_scope().reuse_variables()
                         grads = optimizer.compute_gradients(loss)
                         tower_grads.append(grads)
+
+                        # 下一个gpu可以复用这些变量
+                        tf.get_variable_scope().reuse_variables()
 
 
         # 剩下的默认应该是cpu0，待确认
