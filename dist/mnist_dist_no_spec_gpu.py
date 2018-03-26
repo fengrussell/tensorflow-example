@@ -14,7 +14,7 @@ REGULARAZTION_RATE = 0.0001
 TRAINING_STEPS = 20000
 MOVING_AVERAGE_DECAY = 0.99
 
-MODEL_SAVE_PATH = "logs/log_sync"
+MODEL_SAVE_PATH = "log/sync"
 DATA_PATH = "../data/mnist"
 
 # 和异步模式类似的设置flags。
@@ -95,7 +95,7 @@ def main(argv=None):
         # 把处理同步更新的hook也加进来。
         hooks = [sync_replicas_hook, tf.train.StopAtStepHook(last_step=TRAINING_STEPS)]
         sess_config = tf.ConfigProto(allow_soft_placement=True,
-                                     log_device_placement=True)
+                                     log_device_placement=False)
 
         # 训练过程和异步一致。
         with tf.train.MonitoredTrainingSession(master=server.target,
