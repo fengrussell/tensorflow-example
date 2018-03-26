@@ -38,7 +38,9 @@ def build_model(x, y_, n_workers, is_chief):
     regularizer = tf.contrib.layers.l2_regularizer(REGULARAZTION_RATE)
     y = mnist_inference.inference(x, regularizer)
     # global_step = tf.train.get_or_create_global_step()
-    global_step = tf.get_variable('global_step', [], initializer=tf.constant_initializer(0), trainable=False)
+    # 这种方式提示：TypeError: Existing "global_step" does not have integer type: <dtype: 'float32_ref'>
+    # global_step = tf.get_variable('global_step', [], initializer=tf.constant_initializer(0), trainable=False)
+    global_step = tf.train.get_or_create_global_step()
 
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=y, labels=tf.argmax(y_, 1))
     cross_entropy_mean = tf.reduce_mean(cross_entropy)
