@@ -3,6 +3,6 @@ out
 cs20/graphs/
 mnist/data/
 mnist/log/
-.pyc
+*.pyc
 dist/log
 dist/logs
