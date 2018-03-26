@@ -9,7 +9,7 @@ from tensorflow.examples.tutorials.mnist import input_data as mnist_data
 flags = tf.app.flags
 IMAGE_PIXELS = 28
 
-flags.DEFINE_string('data_dir', '/tmp/mnist-data', 'Directory for storing mnist data')
+flags.DEFINE_string('data_dir', '../data/mnist', 'Directory for storing mnist data')
 flags.DEFINE_integer('hidden_units', 100, 'Number of units in the hidden layer of the NN')
 flags.DEFINE_integer('train_steps', 10000, 'Number of training steps to perform')
 flags.DEFINE_integer('batch_size', 100, 'Training batch size ')
@@ -20,7 +20,7 @@ flags.DEFINE_string('worker_hosts', '127.0.0.1:50001,127.0.0.1:50002', 'Comma-se
 
 flags.DEFINE_string('job_name', None, 'job name: worker or ps')
 flags.DEFINE_integer('task_index', None, 'Index of task within the job')
-flags.DEFINE_integer('issync', None, '是否采用分布式的同步模式，1表示同步模式，0表示异步模式')
+flags.DEFINE_integer('issync', None, '是否采用分布式的同步模式，1表示同步模式，0表示异步模式')  # 没有这个参数设置，是异步模式
 
 FLAGS = flags.FLAGS
 

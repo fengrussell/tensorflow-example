@@ -18,7 +18,7 @@ MOVING_AVERAGE_DECAY = 0.99
 # 模型保存路径
 MODEL_SAVE_PATH = "./log/sync"
 # 数据路径
-DATA_PATH = "./data/output.tfrecords"
+DATA_PATH = "../data/mnist/train.tfrecords"
 
 # gpu数量，先定义为常量
 #N_GPU = 2

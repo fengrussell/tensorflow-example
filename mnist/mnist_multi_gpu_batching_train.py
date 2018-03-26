@@ -65,7 +65,7 @@ FLAGS = tf.app.flags.FLAGS
 
 tf.app.flags.DEFINE_integer('batch_size', 64,
                             """Number of images to process in a batch.""")
-tf.app.flags.DEFINE_string('data_dir', './data/mnist_data',
+tf.app.flags.DEFINE_string('data_dir', '../data/mnist',
                            """Path to the MNIST data directory.""")
 tf.app.flags.DEFINE_string('train_dir', './data/mnist_train',
                            """Directory where to write event logs """

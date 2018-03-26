@@ -41,7 +41,7 @@ TRAINING_STEPS = 20000
 MOVING_AVERAGE_DECAY = 0.99
 
 MODEL_SAVE_PATH = "logs/log_sync"
-DATA_PATH = "./data/mnist_data"
+DATA_PATH = "../data/mnis"
 
 FLAGS = tf.app.flags.FLAGS
 

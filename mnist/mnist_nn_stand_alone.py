@@ -4,7 +4,7 @@
 import tensorflow as tf
 # import numpy as np
 from tensorflow.examples.tutorials.mnist import input_data
-mnist = input_data.read_data_sets("./data/mnist_data/", one_hot=True)
+mnist = input_data.read_data_sets("../data/mnist/", one_hot=True)
 # rng = np.random
 
 IMAGE_PIXELS = 28

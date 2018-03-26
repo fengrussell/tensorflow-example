@@ -54,7 +54,7 @@ MODEL_NAME = "model.ckpt"
 # 的方式从TFRecord中读取数据。于是在这里提供的数据文件路径为将MNIST训练数据
 # 转化为TFRecords格式之后的路径。如何将MNIST数据转化为TFRecord格式在第7章中有
 # 详细介绍，这里不再赘述。
-DATA_PATH = "./data/output.tfrecords"
+DATA_PATH = "../data/mnist/train.tfrecords"
 
 
 def get_input():
