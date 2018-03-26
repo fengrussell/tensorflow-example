@@ -11,7 +11,7 @@ BATCH_SIZE = 100
 LEARNING_RATE_BASE = 0.01
 LEARNING_RATE_DECAY = 0.99
 REGULARAZTION_RATE = 0.0001
-TRAINING_STEPS = 20000
+TRAINING_STEPS = 1000
 MOVING_AVERAGE_DECAY = 0.99
 
 MODEL_SAVE_PATH = "log/sync"
@@ -35,7 +35,7 @@ tf.app.flags.DEFINE_integer('task_id', 0, 'Task ID of the worker/replica running
 def build_model(x, y_, n_workers, is_chief):
     regularizer = tf.contrib.layers.l2_regularizer(REGULARAZTION_RATE)
     y = mnist_inference.inference(x, regularizer)
-    global_step = tf.contrib.framework.get_or_create_global_step()
+    global_step = tf.train.get_or_create_global_step()
 
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=y, labels=tf.argmax(y_, 1))
     cross_entropy_mean = tf.reduce_mean(cross_entropy)
@@ -51,6 +51,7 @@ def build_model(x, y_, n_workers, is_chief):
         tf.train.GradientDescentOptimizer(learning_rate),
         replicas_to_aggregate=n_workers,
         total_num_replicas=n_workers)
+
     sync_replicas_hook = opt.make_session_run_hook(is_chief)
     train_op = opt.minimize(loss, global_step=global_step)
 
@@ -118,7 +119,7 @@ def main(argv=None):
                     sec_per_batch = duration / global_step_value
                     format_str = "After %d training steps (%d global steps), " + \
                                  "loss on training batch is %g. (%.3f sec/batch)"
-                    print format_str % (step, global_step_value, loss_value, sec_per_batch)
+                    print format_str % (step+1, global_step_value, loss_value, sec_per_batch)
                 step += 1
 
 
