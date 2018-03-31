@@ -226,7 +226,7 @@ def main(argv=None):
             if global_step_value >= FLAGS.max_number_of_steps:
                 break
 
-            if step > 0 and step % 100 == 0:
+            if step > 0 and step % 2 == 0:
                 duration = time.time() - start_time
                 sec_per_batch = duration / (global_step_value * num_workers)
                 format_str = ("After %d training steps (%d global steps), "

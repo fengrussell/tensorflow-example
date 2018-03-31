@@ -208,7 +208,7 @@ def main(argv=None):
                 _, loss_value, global_step_value = mon_sess.run(
                     [train_op, losses, global_step], feed_dict={x: xs, y: ys})
 
-                if step > 0 and step % 100 == 0:
+                if step > 0 and step % 2 == 0:
                     duration = time.time() - start_time
                     sec_per_batch = duration / global_step_value
                     format_str = "After %d training steps (%d global steps), " + \
