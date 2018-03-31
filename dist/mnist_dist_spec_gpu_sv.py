@@ -6,22 +6,24 @@ import time
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 
-import mnist_inference
-
 # 配置神经网络的参数。
-BATCH_SIZE = 100
+# BATCH_SIZE = 16
 LEARNING_RATE_BASE = 0.01
 LEARNING_RATE_DECAY = 0.99
 REGULARAZTION_RATE = 0.0001
-TRAINING_STEPS = 1000
 MOVING_AVERAGE_DECAY = 0.99
+# TRAINING_STEPS = 10
 
 MODEL_SAVE_PATH = "log/sync"
 DATA_PATH = "../data/mnist"
 
-# 和异步模式类似的设置flags。
 FLAGS = tf.app.flags.FLAGS
 
+
+#################
+# Cluster Flags #
+#################
+# 和异步模式类似的设置flags。
 tf.app.flags.DEFINE_string('job_name', 'worker', ' "ps" or "worker" ')
 tf.app.flags.DEFINE_string(
     'ps_hosts', ' tf-ps0:2222,tf-ps1:1111',
@@ -32,6 +34,19 @@ tf.app.flags.DEFINE_string(
 tf.app.flags.DEFINE_integer('task_id', 0, 'Task ID of the worker/replica running the training.')
 tf.app.flags.DEFINE_integer('num_gpus', 1, 'How many GPUs to use.')
 
+
+#######################
+# Dataset Flags #
+#######################
+
+tf.app.flags.DEFINE_string('dataset_path', '/home/work/*.tfrecords',
+                           'The directory where the dataset files are stored.')
+
+tf.app.flags.DEFINE_integer('batch_size', 16,
+                            'The number of samples in each train batch.')
+
+tf.app.flags.DEFINE_integer('max_number_of_steps', 100,
+                            'The maximum number of training steps.')
 
 ####################
 # Define the model #
@@ -89,7 +104,7 @@ def build_model(x, y, num_workers, is_chief):
     regularizer = tf.contrib.layers.l2_regularizer(REGULARAZTION_RATE)
     # global_step = tf.train.get_or_create_global_step(
     global_step=tf.get_variable('global_step', [], initializer=tf.constant_initializer(0), trainable=False)
-    learning_rate = tf.train.exponential_decay(LEARNING_RATE_BASE, global_step, 60000 / BATCH_SIZE, LEARNING_RATE_DECAY)
+    learning_rate = tf.train.exponential_decay(LEARNING_RATE_BASE, global_step, 60000 / FLAGS.batch_size, LEARNING_RATE_DECAY)
     optimizer = tf.train.GradientDescentOptimizer(learning_rate)
 
     # 每个gpu计算的loss、grad的集合
@@ -189,8 +204,8 @@ def main(argv=None):
                                  summary_op=summary_op,
                                  saver=saver,
                                  global_step=global_step,
-                                 save_model_secs=60,
-                                 save_summaries_secs=60)
+                                 save_model_secs=3600,
+                                 save_summaries_secs=3600)
         sess_config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
         sess = sv.prepare_or_wait_for_session(
             server.target, config=sess_config)
@@ -204,17 +219,19 @@ def main(argv=None):
         step = 0
         start_time = time.time()
         while not sv.should_stop():
-            xs, ys = mnist_data.train.next_batch(BATCH_SIZE)
+            xs, ys = mnist_data.train.next_batch(FLAGS.batch_size)
             _, loss_value, global_step_value = sess.run(
-                  [train_op, losses, global_step], feed_dict={x: xs, y: ys})
-            if global_step_value >= TRAINING_STEPS: break
+                      [train_op, losses, global_step], feed_dict={x: xs, y: ys})
+
+            if global_step_value >= FLAGS.max_number_of_steps:
+                break
 
             if step > 0 and step % 100 == 0:
                 duration = time.time() - start_time
                 sec_per_batch = duration / (global_step_value * num_workers)
                 format_str = ("After %d training steps (%d global steps), "
-                                   "loss on training batch is %g.  " 
-                                   "(%.3f sec/batch)")
+                              "loss on training batch is %g.  " 
+                              "(%.3f sec/batch)")
                 print(format_str % (step, global_step_value,
                                     fromat_losses(loss_value), sec_per_batch))
             step += 1

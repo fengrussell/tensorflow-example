@@ -6,15 +6,14 @@ import time
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 
-import mnist_inference
 
 # 配置神经网络的参数。
-BATCH_SIZE = 100
+# BATCH_SIZE = 16
 LEARNING_RATE_BASE = 0.01
 LEARNING_RATE_DECAY = 0.99
 REGULARAZTION_RATE = 0.0001
-TRAINING_STEPS = 1000
 MOVING_AVERAGE_DECAY = 0.99
+# TRAINING_STEPS = 10
 
 MODEL_SAVE_PATH = "log/sync"
 DATA_PATH = "../data/mnist"
@@ -88,7 +87,7 @@ def average_gradients(tower_grads):
 def build_model(x, y, num_workers, is_chief):
     regularizer = tf.contrib.layers.l2_regularizer(REGULARAZTION_RATE)
     global_step = tf.train.get_or_create_global_step()
-    learning_rate = tf.train.exponential_decay(LEARNING_RATE_BASE, global_step, 60000 / BATCH_SIZE, LEARNING_RATE_DECAY)
+    learning_rate = tf.train.exponential_decay(LEARNING_RATE_BASE, global_step, 60000 / FLAGS.batch_size, LEARNING_RATE_DECAY)
     optimizer = tf.train.GradientDescentOptimizer(learning_rate)
 
     # 每个gpu计算的loss、grad的集合
@@ -138,7 +137,7 @@ def build_model(x, y, num_workers, is_chief):
         with tf.control_dependencies([variables_averages_op, train_op]):
             train_op = tf.no_op()
 
-    return global_step, tower_losses, train_op, sync_replicas_hook, rep_op
+    return global_step, tower_losses, train_op, sync_replicas_hook
 
 
 def main(argv=None):
@@ -168,10 +167,10 @@ def main(argv=None):
         x = tf.placeholder(tf.float32, [None, INPUT_NODE], name='input_x')
         y = tf.placeholder(tf.float32, [None, OUTPUT_NODE], name='input_y')
         # 数据的获取在build_model，这个根据实际的情况来决定输入数据在哪处定义
-        global_step, losses, train_op, sync_replicas_hook, rep_op = build_model(x, y, num_workers, is_chief)
+        global_step, losses, train_op, sync_replicas_hook = build_model(x, y, num_workers, is_chief)
 
         # 把处理同步更新的hook也加进来。
-        hooks = [sync_replicas_hook, tf.train.StopAtStepHook(last_step=TRAINING_STEPS)]
+        hooks = [sync_replicas_hook, tf.train.StopAtStepHook(last_step=FLAGS.max_number_of_steps)]
         sess_config = tf.ConfigProto(allow_soft_placement=True,
                                      log_device_placement=False)
 
@@ -181,7 +180,7 @@ def main(argv=None):
                                                is_chief=is_chief,
                                                checkpoint_dir=MODEL_SAVE_PATH,
                                                hooks=hooks,
-                                               save_checkpoint_secs=60,
+                                               save_checkpoint_secs=3600,
                                                config=sess_config) as mon_sess:
 
             print "session started."
@@ -189,7 +188,7 @@ def main(argv=None):
             start_time = time.time()
 
             while not mon_sess.should_stop():
-                xs, ys = mnist_data.train.next_batch(BATCH_SIZE)
+                xs, ys = mnist_data.train.next_batch(FLAGS.batch_size)
                 _, loss_value, global_step_value = mon_sess.run(
                     [train_op, losses, global_step], feed_dict={x: xs, y: ys})
 
@@ -198,11 +197,11 @@ def main(argv=None):
                     sec_per_batch = duration / global_step_value
                     format_str = "After %d training steps (%d global steps), " + \
                                  "loss on training batch is %g. (%.3f sec/batch)"
-                    print format_str % (step, global_step_value, fromat_losses(loss_value), sec_per_batch)
+                    print format_str % (step, global_step_value, _fromat_losses(loss_value), sec_per_batch)
                 step += 1
 
 
-def fromat_losses(losses):
+def _fromat_losses(losses):
     return sum(losses)/len(losses)
 
 # def main(argv=None):
@@ -234,7 +233,7 @@ def fromat_losses(losses):
 #
 #         regularizer = tf.contrib.layers.l2_regularizer(REGULARAZTION_RATE)
 #         global_step = tf.train.get_or_create_global_step()
-#         learning_rate = tf.train.exponential_decay(LEARNING_RATE_BASE, global_step, 60000 / BATCH_SIZE,
+#         learning_rate = tf.train.exponential_decay(LEARNING_RATE_BASE, global_step, 60000 / FLAGS.batch_size,
 #                                                    LEARNING_RATE_DECAY)
 #         optimizer = tf.train.GradientDescentOptimizer(learning_rate)
 #
@@ -278,7 +277,7 @@ def fromat_losses(losses):
 #                 train_op = tf.no_op()
 #
 #         # 把处理同步更新的hook也加进来。
-#         hooks = [sync_replicas_hook, tf.train.StopAtStepHook(last_step=TRAINING_STEPS)]
+#         hooks = [sync_replicas_hook, tf.train.StopAtStepHook(last_step=FLAGS.max_number_of_steps)]
 #         sess_config = tf.ConfigProto(allow_soft_placement=True,
 #                                      log_device_placement=False)
 #
@@ -294,7 +293,7 @@ def fromat_losses(losses):
 #             start_time = time.time()
 #
 #             while not mon_sess.should_stop():
-#                 xs, ys = mnist_data.train.next_batch(BATCH_SIZE)
+#                 xs, ys = mnist_data.train.next_batch(FLAGS.batch_size)
 #                 _, loss_value, global_step_value = mon_sess.run(
 #                     [train_op, loss, global_step], feed_dict={x: xs, y: ys})
 #
