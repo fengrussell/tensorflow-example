@@ -18,6 +18,9 @@ MOVING_AVERAGE_DECAY = 0.99
 MODEL_SAVE_PATH = "log/sync"
 DATA_PATH = "../data/mnist"
 
+#################
+# Cluster Flags #
+#################
 # 和异步模式类似的设置flags。
 FLAGS = tf.app.flags.FLAGS
 
@@ -31,6 +34,19 @@ tf.app.flags.DEFINE_string(
 tf.app.flags.DEFINE_integer('task_id', 0, 'Task ID of the worker/replica running the training.')
 tf.app.flags.DEFINE_integer('num_gpus', 1, 'How many GPUs to use.')
 
+
+#######################
+# Dataset Flags #
+#######################
+
+tf.app.flags.DEFINE_string('dataset_path', '/home/work/*.tfrecords',
+                           'The directory where the dataset files are stored.')
+
+tf.app.flags.DEFINE_integer('batch_size', 16,
+                            'The number of samples in each train batch.')
+
+tf.app.flags.DEFINE_integer('max_number_of_steps', 100,
+                            'The maximum number of training steps.')
 
 ####################
 # Define the model #
