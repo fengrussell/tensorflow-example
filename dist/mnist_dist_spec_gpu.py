@@ -138,7 +138,15 @@ def build_model(x, y, num_workers, is_chief):
         optimizer,
         replicas_to_aggregate=num_workers,
         total_num_replicas=num_workers)
-    sync_replicas_hook = rep_op.make_session_run_hook(is_chief)
+
+    # 2018.04.02 上午
+    # 目前来看必须要加上num_tokens=num_workers，这样多个worker的global_step才会同步！！！
+    # SyncReplicasOptimizer+MonitoredTrainingSession还无法和sv的方式执行保持一致，num_tokens参数看起来可以用保证global_step的一致性，但每个worker的step不一致。
+    # sync_replicas_hook = rep_op.make_session_run_hook(is_chief, num_tokens=num_workers)
+    # 2018.04.02 中午
+    # 对比sv的代码，发现MonitoredTrainingSession没有rep_op.get_chief_queue_runner()和rep_op.get_init_tokens_op(0). 这段逻辑被
+    # 封装在Hook里(begin函数)里，而参数num_tokens正是get_init_tokens_op的参数，所以把num_tokens改为0后就实现了同步。但是chief的时延很大，待继续分析了。
+    sync_replicas_hook = rep_op.make_session_run_hook(is_chief, num_tokens=0)
 
     # 计算当前worker的平均梯度
     grads = average_gradients(tower_grads)
@@ -153,7 +161,7 @@ def build_model(x, y, num_workers, is_chief):
         with tf.control_dependencies([variables_averages_op, train_op]):
             train_op = tf.no_op()
 
-    return global_step, tower_losses, train_op, sync_replicas_hook
+    return global_step, tower_losses, train_op, rep_op, sync_replicas_hook
 
 
 def main(argv=None):
@@ -183,7 +191,7 @@ def main(argv=None):
         x = tf.placeholder(tf.float32, [None, INPUT_NODE], name='input_x')
         y = tf.placeholder(tf.float32, [None, OUTPUT_NODE], name='input_y')
         # 数据的获取在build_model，这个根据实际的情况来决定输入数据在哪处定义
-        global_step, losses, train_op, sync_replicas_hook = build_model(x, y, num_workers, is_chief)
+        global_step, losses, train_op, rep_op, sync_replicas_hook = build_model(x, y, num_workers, is_chief)
 
         # 把处理同步更新的hook也加进来。
         hooks = [sync_replicas_hook, tf.train.StopAtStepHook(last_step=FLAGS.max_number_of_steps)]
@@ -213,11 +221,11 @@ def main(argv=None):
                     sec_per_batch = duration / global_step_value
                     format_str = "After %d training steps (%d global steps), " + \
                                  "loss on training batch is %g. (%.3f sec/batch)"
-                    print format_str % (step, global_step_value, _fromat_losses(loss_value), sec_per_batch)
+                    print format_str % (step, global_step_value, _format_losses(loss_value), sec_per_batch)
                 step += 1
 
 
-def _fromat_losses(losses):
+def _format_losses(losses):
     return sum(losses)/len(losses)
 
 # def main(argv=None):
