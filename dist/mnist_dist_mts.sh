@@ -1,6 +1,6 @@
 #!/bin/bash
 
-python -u mnist_dist_spec_gpu.py \
+python -u mnist_dist_mts.py \
   --batch_size=8 \
   --max_number_of_steps=10 \
   --ps_hosts=10.231.56.190:2222 \

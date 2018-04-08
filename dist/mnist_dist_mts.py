@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # 执行命令：
-# python mnist_dist_spec_gpu.py --ps_hosts=1.1.1.1:2222 --worker_hosts=1.1.1.1:2222,1.1.1.2:2222 --job_name=ps/worker --task_id=0
+# python mnist_dist_mts.py --ps_hosts=1.1.1.1:2222 --worker_hosts=1.1.1.1:2222,1.1.1.2:2222 --job_name=ps/worker --task_id=0
 
 import time
 import tensorflow as tf
