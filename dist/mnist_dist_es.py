@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-# https://gist.github.com/protoget/2cf2b530bc300f209473374cf02ad829
+# https://gist.github.com/protoget/2cf2b530bc300f209473374cf02ad829 这个代码没有设置Environment.CLOUD，所以worker不会执行
+# 目前这个代码只能异步的方式执行，如果是同步的方式参考cifar10_main.py代码，gpu还是要显式的分配op
+# https://github.com/tensorflow/models/blob/master/tutorials/image/cifar10_estimator/cifar10_main.py
 
 from datetime import datetime
 import os
@@ -142,18 +144,21 @@ def main(args):
     tf_config = {
         "cluster": {
             'ps': ['127.0.0.1:2222'],
-            'worker': ['127.0.0.1:2223']
+            'worker': ['127.0.0.1:2223', '127.0.0.1:2224']
         }
+        # 'environment': 'cloud' # 在tf_config设置enviroment没有效果，还需要通过run_config设置
     }
 
-    if args.type == "worker":
+    if args.type == "worker0":
         tf_config["task"] = {'type': 'worker', 'index': 0}
+    elif args.type == "worker1":
+        tf_config["task"] = {'type': 'worker', 'index': 1}
     else:
         tf_config["task"] = {'type': 'ps', 'index': 0}
 
     os.environ['TF_CONFIG'] = json.dumps(tf_config)
     config = run_config_lib.RunConfig()
-    config._environment = run_config_lib.Environment.CLOUD
+    config._environment = run_config_lib.Environment.CLOUD  # 需要设置enviroment为cloud才可以按分布式执行
 
     learn_runner.run(experiment_fn=create_experiment_fn(config), output_dir=MODEL_SAVE_PATH)
 
