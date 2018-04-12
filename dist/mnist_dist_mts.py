@@ -35,9 +35,9 @@ tf.app.flags.DEFINE_integer('task_id', 0, 'Task ID of the worker/replica running
 tf.app.flags.DEFINE_integer('num_gpus', 1, 'How many GPUs to use.')
 
 
-#######################
+#################
 # Dataset Flags #
-#######################
+#################
 
 tf.app.flags.DEFINE_string('dataset_path', '/home/work/*.tfrecords',
                            'The directory where the dataset files are stored.')
@@ -164,6 +164,14 @@ def build_model(x, y, num_workers, is_chief):
     return global_step, tower_losses, train_op, rep_op, sync_replicas_hook
 
 
+def _sum_losses(losses):
+    if len(losses) <= 1:
+        return "%g" % losses[0]
+
+    # "loss format: avg_loss [g0_loss, g1_loss]"
+    return "%g [%s]" % (sum(losses)/len(losses), ", ".join(map(lambda x: '%g' % x, losses)))
+
+
 def main(argv=None):
     # 解析参数，定义cluster
     ps_hosts = FLAGS.ps_hosts.split(',')
@@ -220,13 +228,10 @@ def main(argv=None):
                     duration = time.time() - start_time
                     sec_per_batch = duration / global_step_value
                     format_str = "After %d training steps (%d global steps), " + \
-                                 "loss on training batch is %g. (%.3f sec/batch)"
-                    print format_str % (step, global_step_value, _format_losses(loss_value), sec_per_batch)
+                                 "loss on training batch is %s. (%.3f sec/batch)"
+                    print format_str % (step, global_step_value, _sum_losses(loss_value), sec_per_batch)
                 step += 1
 
-
-def _format_losses(losses):
-    return sum(losses)/len(losses)
 
 # def main(argv=None):
 #     # 解析参数，定义cluster
