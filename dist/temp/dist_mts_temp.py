@@ -2,7 +2,9 @@
 # 利用MonitoredTrainingSession实现tf分布式同步训练
 
 import tensorflow as tf
+
 import time
+from datetime import datetime
 
 # 1. 定义shell执行脚本要接收的参数
 
@@ -44,6 +46,8 @@ tf.app.flags.DEFINE_float('moving_average_decay', 0.99,
                           'If left as None, then moving averages are not used.')
 
 
+# 2. 私有方法
+
 def _sum_gpu_gradients(clone_grads):
     sum_grads = []
     for grad_and_vars in zip(*clone_grads):
@@ -74,8 +78,20 @@ def _sum_losses(losses):
     return "%g [%s]" % (sum(losses)/len(losses), ", ".join(map(lambda x: '%g' % x, losses)))
 
 
-# 定义读取数据(tfrecords)的函数，返回一个queue，这种方式方便每个gpu分配数据。（placeholder的方式还需要split）
+def _get_init_fn_of_scaffold(saver, model_path):
+    def init_fn(scaffold, session):
+        saver.restore(session, model_path)
+
+    return init_fn
+
+
+# 3. 输入数据queue/函数
 def input_queue():
+    return 1
+
+
+# 定义读取数据(tfrecords)的函数，返回一个queue，这种方式方便每个gpu分配数据。（placeholder的方式还需要split）
+def input_fn():
     file_names = tf.train.match_filenames_once(FLAGS.dataset_dir)
     filename_queue = tf.train.string_input_producer(file_names)
     reader = tf.TFRecordReader()
@@ -107,12 +123,12 @@ def input_queue():
     return images, labels
 
 
-# 网络
+# 4. 网络函数
 def network_fn(images):
     return 1
 
 
-# 模型
+# 5. 模型（同步分布式），计算grad、loss
 def model_fn(num_workers, is_chief):
 
     all_grads = []
@@ -125,7 +141,7 @@ def model_fn(num_workers, is_chief):
         for i in range(FLAGS.num_gpus):
             with tf.device("/gpu:%d" % i):
                 with tf.name_scope('worker%d_gpu%d' % (FLAGS.task_id, i)) as scope:
-                    images, labels = input_queue()
+                    images, labels = input_fn()
 
                     # 计算logits
                     logits = network_fn(images)
@@ -141,16 +157,17 @@ def model_fn(num_workers, is_chief):
                     # 下一个gpu可以复用这些变量
                     tf.get_variable_scope().reuse_variables()
 
-    rep_op = tf.train.SyncReplicasOptimizer(
-        optimizer,
-        replicas_to_aggregate=num_workers,
-        total_num_replicas=num_workers)
+    with tf.device("/cpu:0"):
+        sync_opt = tf.train.SyncReplicasOptimizer(
+            optimizer,
+            replicas_to_aggregate=num_workers,
+            total_num_replicas=num_workers)
 
-    grads = _sum_gpu_gradients(all_grads)
-    train_op = rep_op.apply_gradients(grads, global_step=global_step)
+        grads = _sum_gpu_gradients(all_grads)
+        train_op = sync_opt.apply_gradients(grads, global_step=global_step)
 
-    # 定义hook
-    sync_replicas_hook = rep_op.make_session_run_hook(is_chief, num_tokens=0)
+    # 定义hook，目前num_tokens=0才能保证同步执行，不过执行完会抛出一个异常，但不影响Training。
+    sync_replicas_hook = sync_opt.make_session_run_hook(is_chief, num_tokens=0)
 
     # 滑动平均
     if FLAGS.moving_average_decay is not None and is_chief:
@@ -186,25 +203,41 @@ def main(_):
 
     with tf.device(tf.train.replica_device_setter(worker_device="/job:worker/task:%d" % FLAGS.task_id,
                                                   cluster=cluster)):
-        # 1. 数据，指定cpu处理数据，如果不设置，会使用gpu处理
-        with tf.device("/cpu:0"):
-            batch_queue = input_queue()
 
-        # 2. 模型
+        # 1. 训练数据，显式的指定cpu处理数据，避免一些默认环境变量下在gpu执行
+        with tf.device("/cpu:0"):
+            batch_fn = input_queue()  # 如果采用queue来传递数据，用这种方式
+
+        # 2. 模型返回op、hook、global_step等
         global_step, losses, train_op, sync_replicas_hook = model_fn(num_workers, is_chief)
 
+        # 3. 定义hooks，保持同步、训练终止
+        # StopAtStepHook有两个参数：num_steps、last_step，二选一
         hooks = [sync_replicas_hook, tf.train.StopAtStepHook(last_step=FLAGS.max_number_of_steps)]
+        if is_chief:
+            # chief定义保存ckpt的hook
+            saver_hook = tf.train.CheckpointSaverHook(
+                checkpoint_dir=FLAGS.train_dir,
+                save_steps=FLAGS.steps_each_save  # save_steps/save_secs参数只能二选一
+            )
+            hooks.append(saver_hook)
+
+        # 4. scaffold，定义需要做的初始化的op
+        scaffold = tf.train.Scaffold(init_op=tf.global_variables_initializer(),
+                                     init_fn=_get_init_fn_of_scaffold() if is_chief else None)
+
+        # 5. session
         sess_config = tf.ConfigProto(allow_soft_placement=True,
                                      log_device_placement=False)
 
-        # 3. session
         with tf.train.MonitoredTrainingSession(master=server.target,
                                                is_chief=is_chief,
                                                checkpoint_dir=FLAGS.train_dir,
                                                hooks=hooks,
+                                               scaffold=scaffold,
                                                save_checkpoint_secs=3600,
                                                config=sess_config) as mon_sess:
-            print("session started.")
+            print("session started. ")
             step = 0
             start_time = time.time()
 
@@ -216,11 +249,15 @@ def main(_):
 
                 if step > 0 and step % FLAGS.log_every_n_steps == 0:
                     duration = time.time() - start_time
-                    sec_per_batch = duration / global_step_value
-                    format_str = "After %d training steps (%d global steps), " + \
-                                 "loss on training batch is %s. (%.3f sec/batch)"
-                    print(format_str % (step, global_step_value, _sum_losses(loss_value), sec_per_batch))
+                    sec_per_step = duration / global_step_value
+
+                    format_str = "%s: global step %d (local step %d), loss = %s (%.3f sec/step) "
+                    print(format_str % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), global_step_value,
+                                        step, _sum_losses(loss_value), sec_per_step))
                 step += 1
+
+            if is_chief:
+                print('Finished training! ')
 
 
 if __name__ == '__main__':
