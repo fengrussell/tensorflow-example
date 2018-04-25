@@ -6,3 +6,4 @@ mnist/log/
 *.pyc
 dist/log
 dist/logs
+dist/checkpoints
