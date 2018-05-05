@@ -16,6 +16,15 @@ def list_bool_test():
         print("list is empty")
 
 
+def list_enum_test():
+    list1 = [5, 4, 3, 2, 1]
+    for (i, e) in enumerate(list1):
+        print (i, e)
+    list2 = [e for (i, e) in enumerate(list1) if False]
+    for l in list2:
+        print l
+
+
 def get_tuple(flag):
     if flag:
         return None
@@ -24,7 +33,8 @@ def get_tuple(flag):
 
 
 if __name__ == "__main__":
-    list_test()
-    list_bool_test()
+    # list_test()
+    # list_bool_test()
+    list_enum_test()
     # print time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
