@@ -213,6 +213,7 @@ def main(argv=None):
                                                checkpoint_dir=MODEL_SAVE_PATH,
                                                hooks=hooks,
                                                save_checkpoint_secs=3600,
+                                               stop_grace_period_secs=10,
                                                config=sess_config) as mon_sess:
 
             print "session started."
