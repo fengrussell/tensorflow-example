@@ -209,10 +209,30 @@ def example2():
     '''
 
 
+# 通过集合获取变量
+def test4_collection_vars():
+    x = tf.constant(1.0, shape=[], name="x")  # 0D tensor
+    k = tf.Variable(tf.constant(0.5, shape=[]), name="k")
+    y = tf.multiply(x, k, name="y")
+
+    t = tf.Variable(tf.constant(0.5, shape=[]), name="t", trainable=False)
+    # v1, v2结果一致。只会输出k对应的变量信息. 后来增加了t变量，v1、v2就有了两个元素
+    v1 = tf.global_variables()
+    v2 = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
+    print v1
+    print v2
+
+    v3 = tf.local_variables()  # 这个是空
+    print v3
+
+    v4 = tf.trainable_variables()  # 如果t没有设置trainable=False，v4也是返回k+T对应的变量
+    print v4
+
+
 if __name__ == "__main__":
     # test1()
     # test2()
     # example1()
     # print
     # example2()
-    test3()
+    test4_collection_vars()

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-python -u mnist_dist_mts.py \
+python -u mnist_dist_mts_ex.py \
   --batch_size=8 \
   --max_number_of_steps=10 \
   --ps_hosts=10.231.56.243:2222 \

@@ -36,5 +36,33 @@ def test_scope():
     print(colls2)
 
 
+def test_loss_collection():
+    x1 = tf.constant(1.0)
+    l1 = tf.nn.l2_loss(x1)
+
+    x2 = tf.constant([2.5, -0.3])
+    l2 = tf.nn.l2_loss(x2)
+
+    tf.add_to_collection("losses", l1)
+    tf.add_to_collection("losses", l2)
+
+    losses = tf.get_collection("losses")
+    loss_total = tf.add_n(losses)
+
+    sess = tf.Session()
+    init = tf.global_variables_initializer()
+    sess.run(init)
+
+    print (losses)  # 集合理由两个Tensor，[<tf.Tensor 'L2Loss:0' shape=() dtype=float32>, <tf.Tensor 'L2Loss_1:0' shape=() dtype=float32>]
+
+    losses_val = sess.run(losses)
+    loss_total_val = sess.run(loss_total)
+
+    # losses_val有两个值，相加之后等于loss_total_val
+    print(losses_val)
+    print(loss_total_val)
+
+
 if __name__ == "__main__":
-    test_scope()
+    # test_scope()
+    test_loss_collection()
