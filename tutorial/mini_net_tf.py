@@ -4,6 +4,11 @@
 import tensorflow as tf
 
 
+def _zip_grad_and_vars(grads):
+    print(grads)
+    print(zip(*grads))
+
+
 # 最简单的模型, 输入[1 x 2], 矩阵[2 x 1], bias[1], 输出结果[1].
 def network_fn(input_x):
     # W = tf.Variable(tf.random_normal([2, 1], stddev=1, seed=1), name="W")
@@ -25,7 +30,6 @@ def model_fn(input_x, label):
     optimizer = tf.train.GradientDescentOptimizer(0.01)
     grads = optimizer.compute_gradients(loss)
     train_op = optimizer.apply_gradients(grads)
-    # train_op = tf.train.AdamOptimizer(0.01).minimize(loss)
     return train_op, loss, grads, (_weight, _bias)
 
 
@@ -48,6 +52,7 @@ def main(_):
             print("W[%d]:\n %s\nb[%d]:%s" % (i+1, sess.run(_weight), i+1, sess.run(_bias)))
             print("loss[%d]:%s" % (i+1, sess.run(loss)))
             print("Grads[%d]:%s\n" % (i+1, sess.run(grads)))
+            # _zip_grad_and_vars(grads)
 
 
 if __name__ == "__main__":

@@ -20,6 +20,46 @@ def zip_test():
     print zip(d, e, f)  # *c/c1的拆解 [(1, 2, 3), (4, 5, 6)]
 
 
+def mock_multi_gpu_avg_grads():
+    # 假设4个GPU，计算出grad后要做平均
+    # compute_gradients返回结果是grad_and_vars，每个值是一个tuple，包含了梯度和变量。类似如下，一个2x1的weight和一个1x1的bias，
+    # 我们可以看到返回的梯度是一个tuple。有多个GPU，每一个GPU计算的梯度都一样的结构
+    # [(<tf.Tensor 'gradients/MatMul_grad/tuple/control_dependency_1:0' shape=(2, 1) dtype=float32>,
+    #   <tf.Variable 'weight:0' shape=(2, 1) dtype=float32_ref>),
+    #  (<tf.Tensor 'gradients/Add_grad/tuple/control_dependency_1:0' shape=(1,) dtype=float32>,
+    #   <tf.Variable 'bias:0' shape=(1,) dtype=float32_ref>)]
+    grads_tower = []
+    # GPU0
+    grads_tower.append([('g0_0', 'v0'), ('g1_0', 'v1')])
+    # GPU1
+    grads_tower.append([('g0_1', 'v0'), ('g1_1', 'v1')])
+    # GPU2
+    grads_tower.append([('g0_2', 'v0'), ('g1_2', 'v1')])
+    # GPU3
+    grads_tower.append([('g0_3', 'v0'), ('g1_3', 'v1')])
+
+    # [[('g0_0', 'v0'), ('g1_0', 'v1')], [('g0_1', 'v0'), ('g1_1', 'v1')],
+    #  [('g0_2', 'v0'), ('g1_2', 'v1')], [('g0_3', 'v0'), ('g1_3', 'v1')]]
+    print(grads_tower)
+
+    # 平均grads的思路
+    # 1. 返回结构应该和某一个GPU返回的结果结构一样，因为var不变，只需要把grads做平均即可
+    # 2. 把grads_tower每一个变量对应的梯度放在一个tuple里，用zip方法
+    # 3. 平均grads，然后(avg_grad, var)放回结构体，这样就可以apply_gradients
+    grad_and_vars = zip(*grads_tower)
+
+    # [(('g0_0', 'v0'), ('g0_1', 'v0'), ('g0_2', 'v0'), ('g0_3', 'v0')),
+    #  (('g1_0', 'v1'), ('g1_1', 'v1'), ('g1_2', 'v1'), ('g1_3', 'v1'))]
+    # 可以看到zip之后，每个var梯度都在一个列表(tuple)中了
+    print(grad_and_vars)
+
+    for g in grad_and_vars:
+        var = g[0][1]
+        print var
+        # 平均grads ........
+        # 注意var的grads为None，slim的做法的跳过去。这个是其他average_gradient没有的逻辑，TODO 这个需要在研究怎么实现平均。
+
+
 def map_reduce_test():
     def m(x):
         return x*x
@@ -115,4 +155,7 @@ if __name__ == "__main__":
     # map_reduce_test()
     # filter_test()
     # fun_test()
-    closure_test()
+    # closure_test()
+    mock_multi_gpu_avg_grads()
+
+
