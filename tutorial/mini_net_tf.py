@@ -46,12 +46,15 @@ def main(_):
     with tf.Session() as sess:
         sess.run(init_op)
 
-        print("W[0]:\n %s\nb[0]:%s\n" % (sess.run(_weight), sess.run(_bias)))
+        # print("W[0]:\n %s\nb[0]:%s\n" % (sess.run(_weight), sess.run(_bias)))
+        # print("Grads[%d]:%s\n" % (0, sess.run(grads)))
+
         for i in range(3):
+            print("Grads[%d]:%s\n" % (i + 1, sess.run(grads)))
             sess.run(train_op)
             print("W[%d]:\n %s\nb[%d]:%s" % (i+1, sess.run(_weight), i+1, sess.run(_bias)))
             print("loss[%d]:%s" % (i+1, sess.run(loss)))
-            print("Grads[%d]:%s\n" % (i+1, sess.run(grads)))
+
             # _zip_grad_and_vars(grads)
 
 
