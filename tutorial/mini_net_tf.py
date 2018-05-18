@@ -50,10 +50,11 @@ def main(_):
         # print("Grads[%d]:%s\n" % (0, sess.run(grads)))
 
         for i in range(3):
-            print("Grads[%d]:%s\n" % (i + 1, sess.run(grads)))
+            print("=========== iter %d ==========" % (i+1))
+            print("Grads[(grad, var)]:%s" % sess.run(grads))
             sess.run(train_op)
-            print("W[%d]:\n %s\nb[%d]:%s" % (i+1, sess.run(_weight), i+1, sess.run(_bias)))
-            print("loss[%d]:%s" % (i+1, sess.run(loss)))
+            print("updated weight:\n %s\nupdated bias:%s" % (sess.run(_weight), sess.run(_bias)))
+            print("loss[%d]:%s\n" % (i+1, sess.run(loss)))
 
             # _zip_grad_and_vars(grads)
 
