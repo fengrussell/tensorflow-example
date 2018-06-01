@@ -7,3 +7,4 @@ mnist/log/
 dist/log
 dist/logs
 dist/checkpoints
+*MNIST*
